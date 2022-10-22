@@ -7,6 +7,7 @@ import {
   Keypair,
   PublicKey,
   clusterApiUrl,
+  SystemProgram,
 } from "@solana/web3.js";
 
 import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
@@ -40,6 +41,11 @@ describe("project-swap", () => {
 
   const INIT_AMOUNT_MOVE_TOKEN_IN_POOL = 1000000;
   const DEFAULT_TOKEN_DECIMALS = 9;
+
+  const testUserWallet = anchor.web3.Keypair.fromSecretKey(
+    Uint8Array.from([227, 172, 74, 151, 248, 155, 76, 39, 177, 150, 136, 178, 121, 55, 224, 103, 56, 131, 221, 60, 195, 148, 125, 96, 152, 160, 198, 106, 3, 213, 110, 124, 0, 38, 166, 147, 249, 82, 149, 49, 76, 28, 6, 149, 20, 117, 255, 88, 81, 108, 91, 140, 35, 237, 65, 163, 151, 31, 81, 219, 31, 227, 179, 202])
+  );
+  console.log(`test user wallet = ${testUserWallet.publicKey}`);
 
   it("Test init pool swap!", async () => {
     [swapAuthority, bumpSeed] = await PublicKey.findProgramAddress(
@@ -89,6 +95,28 @@ describe("project-swap", () => {
   });
 
   it("Test swap SOL to MOVE!", async () => {
+    const userMoveAccountInfo = await moveToken.getOrCreateAssociatedAccountInfo(testUserWallet.publicKey);
+    const userMoveAccount = userMoveAccountInfo.address;
 
+    console.log(`user MOVE token account = ${userMoveAccount.toBase58()}`);
+
+    const amountIn = new anchor.BN(1 * 1e9); // 1 SOL
+
+    let txSwap = await program.methods
+    .swap(amountIn)
+    .accounts({
+      poolInfo: poolInfoAccount.publicKey,
+      swapAuthority: swapAuthority,
+      userWallet: testUserWallet.publicKey,
+      userQuoteAccount: userMoveAccount,
+      poolNativeAccount: poolSolAccountInfo.publicKey,
+      poolQuoteAccount: poolMoveTokenAccount,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+    })
+    .signers([testUserWallet])
+    .rpc();
+
+    console.log(`tx hash swap = ${txSwap}`);
   });
 });
