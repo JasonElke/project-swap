@@ -2,15 +2,93 @@ import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
 import { ProjectSwap } from "../target/types/project_swap";
 
+import {
+  Connection,
+  Keypair,
+  PublicKey,
+  clusterApiUrl,
+} from "@solana/web3.js";
+
+import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+
+
 describe("project-swap", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env());
 
   const program = anchor.workspace.ProjectSwap as Program<ProjectSwap>;
 
-  it("Is initialized!", async () => {
-    // Add your test here.
-    const tx = await program.methods.initialize().rpc();
-    console.log("Your transaction signature", tx);
+  const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+
+  // Owner for create token mint and pay fee
+  const owner = anchor.web3.Keypair.fromSecretKey(
+    Uint8Array.from([21, 21, 67, 255, 79, 126, 27, 118, 154, 46, 185, 76, 113, 140, 171, 18, 232, 222, 215, 46, 186, 206, 165, 137, 136, 141, 91, 252, 97, 125, 90, 32, 168, 242, 53, 253, 141, 165, 12, 126, 138, 128, 97, 89, 199, 122, 181, 93, 149, 65, 251, 180, 82, 250, 71, 149, 202, 59, 38, 238, 149, 184, 241, 17])
+  );
+  console.log(`owner = ${owner.publicKey}`);
+
+  // Pool info define
+  let swapAuthority: PublicKey;
+  let bumpSeed: number;
+  let moveToken: Token;
+  let poolMoveTokenAccount: PublicKey;
+
+  const poolSolAccountInfo = new Keypair();
+  console.log(`Create poolSolAccountInfo: \npubkey=${poolSolAccountInfo.publicKey} \nsecretKey= ${poolSolAccountInfo.secretKey}`)
+
+  const poolInfoAccount = new Keypair();
+  console.log(`Create pool info account = ${poolInfoAccount.publicKey.toBase58()}`);
+
+  const INIT_AMOUNT_MOVE_TOKEN_IN_POOL = 1000000;
+  const DEFAULT_TOKEN_DECIMALS = 9;
+
+  it("Test init pool swap!", async () => {
+    [swapAuthority, bumpSeed] = await PublicKey.findProgramAddress(
+      [poolInfoAccount.publicKey.toBuffer()],
+      program.programId
+    );
+
+    // Create MOVE token mint
+    moveToken = await Token.createMint(
+      connection,
+      owner,
+      owner.publicKey,
+      null,
+      DEFAULT_TOKEN_DECIMALS,
+      TOKEN_PROGRAM_ID,
+    );
+    console.log(`MOVE token mint address = ${moveToken.publicKey}`);
+
+    poolMoveTokenAccount = await moveToken.createAccount(swapAuthority);
+    console.log(`Pool MOVE token account = ${poolMoveTokenAccount}`);
+
+    // Mint init amount to MOVE token account in pool
+    await moveToken.mintTo(
+      poolMoveTokenAccount,
+      owner,
+      [],
+      INIT_AMOUNT_MOVE_TOKEN_IN_POOL * Math.pow(10, DEFAULT_TOKEN_DECIMALS)
+    );
+
+    const initPrice = new anchor.BN(10);
+    console.log(`Init price in pool = ${initPrice.toNumber()}`);
+    let txInitPoolSwap = await program.methods
+      .initPoolSwap(initPrice)
+      .accounts({
+        poolInfo: poolInfoAccount.publicKey,
+        swapAuthority: swapAuthority,
+        quoteTokenAccount: poolMoveTokenAccount,
+        nativeAccountInfo: poolSolAccountInfo.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([poolInfoAccount])
+      .preInstructions([await program.account.poolInfo.createInstruction(poolInfoAccount)])
+      .rpc();
+
+    console.log(`tx hash init pool swap = ${txInitPoolSwap}`);
+
+  });
+
+  it("Test swap SOL to MOVE!", async () => {
+
   });
 });

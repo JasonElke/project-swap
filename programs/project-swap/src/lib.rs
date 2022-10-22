@@ -1,17 +1,18 @@
 pub mod errors;
 
 use anchor_lang::{prelude::*, solana_program};
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use anchor_spl::token::{self, TokenAccount, Transfer};
 
 use errors::*;
 
-declare_id!("3kttdpDFZfHq61Q8WXCxbdyQNYPenmt9uhibTN7shHkZ");
+declare_id!("3XpXWp8btTTztT3ra6TgSFSnde1cC3anx9suwKqVTQRN");
 
 #[program]
 pub mod project_swap {
     use super::*;
 
     pub fn init_pool_swap(ctx: Context<InitPoolSwap>, init_price: u64) -> Result<()> {
+        msg!("INIT POOL SWAP");
         if ctx.accounts.pool_info.is_initialized {
             return Err(SwapError::AlreadyInUse.into());
         }
@@ -167,7 +168,8 @@ pub struct InitPoolSwap<'info> {
     #[account(mut)]
     pub native_account_info: AccountInfo<'info>,
 
-    pub token_program: Program<'info, Token>,
+    /// CHECK: doc comment explaining why no checks through types are necessary.
+    pub token_program: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -192,8 +194,10 @@ pub struct Swap<'info> {
     #[account(mut)]
     pub pool_quote_account: Account<'info, TokenAccount>,
 
-    pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>,
+    /// CHECK: doc comment explaining why no checks through types are necessary.
+    pub system_program: AccountInfo<'info>,
+    /// CHECK: doc comment explaining why no checks through types are necessary.
+    pub token_program: AccountInfo<'info>,
 }
 
 // Helpers function

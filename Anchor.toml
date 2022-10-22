@@ -2,7 +2,7 @@
 seeds = false
 skip-lint = false
 [programs.devnet]
-project_swap = "3kttdpDFZfHq61Q8WXCxbdyQNYPenmt9uhibTN7shHkZ"
+project_swap = "3XpXWp8btTTztT3ra6TgSFSnde1cC3anx9suwKqVTQRN"
 
 [registry]
 url = "https://api.apr.dev"
