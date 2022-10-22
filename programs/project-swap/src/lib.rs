@@ -1,7 +1,7 @@
 pub mod errors;
 
 use anchor_lang::{prelude::*, solana_program};
-use anchor_spl::token::{self, TokenAccount, Transfer};
+use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
 use errors::*;
 
@@ -100,7 +100,14 @@ pub mod project_swap {
             ctx.accounts.pool_native_account.key,
             amount_in,
         );
-        solana_program::program::invoke(&sol_transfer_ix, &[ctx.accounts.user_wallet.clone(), ctx.accounts.pool_native_account.clone(), ctx.accounts.system_program.clone()])?;
+        solana_program::program::invoke(
+            &sol_transfer_ix,
+            &[
+                ctx.accounts.user_wallet.clone(),
+                ctx.accounts.pool_native_account.clone(),
+                ctx.accounts.system_program.to_account_info(),
+            ],
+        )?;
 
         // Transfer quote token from pool to user
         let cpi_transfer_quote_token = Transfer {
@@ -160,8 +167,7 @@ pub struct InitPoolSwap<'info> {
     #[account(mut)]
     pub native_account_info: AccountInfo<'info>,
 
-    /// CHECK: doc comment explaining why no checks through types are necessary.
-    pub token_program: AccountInfo<'info>,
+    pub token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
@@ -186,11 +192,8 @@ pub struct Swap<'info> {
     #[account(mut)]
     pub pool_quote_account: Account<'info, TokenAccount>,
 
-    /// CHECK: doc comment explaining why no checks through types are necessary.
-    pub token_program: AccountInfo<'info>,
-    
-    /// CHECK: doc comment explaining why no checks through types are necessary.
-    pub system_program: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
 }
 
 // Helpers function
