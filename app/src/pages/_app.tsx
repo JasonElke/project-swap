@@ -1,8 +1,32 @@
-import '../styles/globals.css'
-import type { AppProps } from 'next/app'
+import { AppProps } from 'next/app';
+import Head from 'next/head';
+import { FC } from 'react';
+import { ContextProvider } from '../contexts/ContextProvider';
+import { AppBar } from '../components/Header';
+import { ContentContainer } from '../components/ContentContainer';
+import Notifications from '../components/Notification'
 
-function MyApp({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />
-}
+require('@solana/wallet-adapter-react-ui/styles.css');
+require('../styles/globals.css');
 
-export default MyApp
+const App: FC<AppProps> = ({ Component, pageProps }) => {
+    return (
+        <>
+          <Head>
+            <title>Swap</title>
+          </Head>
+
+          <ContextProvider>
+            <div className="flex flex-col h-screen">
+              <Notifications />
+              <AppBar/>
+              <ContentContainer>
+                <Component {...pageProps} />
+              </ContentContainer>
+            </div>
+          </ContextProvider>
+        </>
+    );
+};
+
+export default App;
