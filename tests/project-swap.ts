@@ -11,6 +11,7 @@ import {
 } from "@solana/web3.js";
 
 import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { assert } from "chai";
 
 
 describe("project-swap", () => {
@@ -92,6 +93,15 @@ describe("project-swap", () => {
 
     console.log(`tx hash init pool swap = ${txInitPoolSwap}`);
 
+    console.log('loading pool swap...');
+    const fetchedPoolSwap = await program.account.poolInfo.fetch(poolInfoAccount.publicKey);
+
+    assert(fetchedPoolSwap.tokenProgramId.equals(TOKEN_PROGRAM_ID));
+    assert(fetchedPoolSwap.isInitialized == true);
+    assert(fetchedPoolSwap.quoteTokenAccount.equals(poolMoveTokenAccount));
+    assert(fetchedPoolSwap.nativeAccountInfo.equals(poolSolAccountInfo.publicKey));
+    assert(fetchedPoolSwap.price.toNumber() == initPrice.toNumber());
+
   });
 
   it("Test swap SOL to MOVE!", async () => {
@@ -100,23 +110,39 @@ describe("project-swap", () => {
 
     console.log(`user MOVE token account = ${userMoveAccount.toBase58()}`);
 
-    const amountIn = new anchor.BN(1 * 1e9); // 1 SOL
+    const amountIn = new anchor.BN(1e8); // 0.1 SOL
+
+    const userMoveInfoBefore = await moveToken.getAccountInfo(userMoveAccount);
+    const userSolBalanceBefore = await connection.getBalance(testUserWallet.publicKey);
+    const poolSolBalanceBefore = await connection.getBalance(poolSolAccountInfo.publicKey);
+    const poolMoveInfoBefore = await moveToken.getAccountInfo(poolMoveTokenAccount);
 
     let txSwap = await program.methods
-    .swap(amountIn)
-    .accounts({
-      poolInfo: poolInfoAccount.publicKey,
-      swapAuthority: swapAuthority,
-      userWallet: testUserWallet.publicKey,
-      userQuoteAccount: userMoveAccount,
-      poolNativeAccount: poolSolAccountInfo.publicKey,
-      poolQuoteAccount: poolMoveTokenAccount,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      systemProgram: SystemProgram.programId,
-    })
-    .signers([testUserWallet])
-    .rpc();
+      .swap(amountIn)
+      .accounts({
+        poolInfo: poolInfoAccount.publicKey,
+        swapAuthority: swapAuthority,
+        userWallet: testUserWallet.publicKey,
+        userQuoteAccount: userMoveAccount,
+        poolNativeAccount: poolSolAccountInfo.publicKey,
+        poolQuoteAccount: poolMoveTokenAccount,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([testUserWallet])
+      .rpc();
 
     console.log(`tx hash swap = ${txSwap}`);
+
+    console.log('loading pool swap...');
+
+    const userMoveInfoAfter = await moveToken.getAccountInfo(userMoveAccount);
+    const userSolBalanceAfter = await connection.getBalance(testUserWallet.publicKey);
+    const poolSolBalanceAfter = await connection.getBalance(poolSolAccountInfo.publicKey);
+    const poolMoveInfoAfter = await moveToken.getAccountInfo(poolMoveTokenAccount);
+    assert(userMoveInfoAfter.amount.toNumber() - userMoveInfoBefore.amount.toNumber() == 1e9);
+    assert(poolSolBalanceAfter - poolSolBalanceBefore == 1e8);
+    assert(userSolBalanceBefore - userSolBalanceAfter == 1e8);
+    assert(poolMoveInfoBefore.amount.toNumber() - poolMoveInfoAfter.amount.toNumber() == 1e9);
   });
 });
