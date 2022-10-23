@@ -5,7 +5,7 @@ use anchor_spl::token::{self, TokenAccount, Transfer};
 
 use errors::*;
 
-declare_id!("3XpXWp8btTTztT3ra6TgSFSnde1cC3anx9suwKqVTQRN");
+declare_id!("CjJRKb6cSJ6zb4ZjThjVutY1ZWQL2SvpY24TQ2VvY9Wz");
 
 #[program]
 pub mod project_swap {
@@ -104,9 +104,9 @@ pub mod project_swap {
         solana_program::program::invoke(
             &sol_transfer_ix,
             &[
-                ctx.accounts.user_wallet.clone(),
-                ctx.accounts.pool_native_account.clone(),
-                ctx.accounts.system_program.to_account_info(),
+                ctx.accounts.user_wallet.to_account_info().clone(),
+                ctx.accounts.pool_native_account.to_account_info().clone(),
+                ctx.accounts.system_program.to_account_info().clone(),
             ],
         )?;
 
@@ -114,7 +114,7 @@ pub mod project_swap {
         let cpi_transfer_quote_token = Transfer {
             from: ctx.accounts.pool_quote_account.to_account_info().clone(),
             to: ctx.accounts.user_quote_account.to_account_info().clone(),
-            authority: ctx.accounts.user_wallet.clone(),
+            authority: ctx.accounts.swap_authority.clone(),
         };
         let cpi_transfer_quote_token_ctx = CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
@@ -158,7 +158,6 @@ pub struct InitPoolSwap<'info> {
     pub pool_info: Box<Account<'info, PoolInfo>>,
 
     /// CHECK: doc comment explaining why no checks through types are necessary.
-    #[account(mut)]
     pub swap_authority: AccountInfo<'info>,
 
     #[account(mut)]
@@ -180,8 +179,8 @@ pub struct Swap<'info> {
     pub swap_authority: AccountInfo<'info>,
 
     /// CHECK: doc comment explaining why no checks through types are necessary.
-    #[account(signer)]
-    pub user_wallet: AccountInfo<'info>,
+    #[account(mut)]
+    pub user_wallet: Signer<'info>,
 
     /// CHECK: doc comment explaining why no checks through types are necessary.
     #[account(mut)]
