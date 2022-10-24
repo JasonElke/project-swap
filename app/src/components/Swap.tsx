@@ -72,7 +72,13 @@ export function SwapForm() {
         <SwapButton />
       </div>
 
+      <label className='mt-5 block text-sm'>
+        You received: {Number.isNaN(inputAmount)?"":inputAmount * 10 + " MOVE"}
+      </label>
 
+      <label className='mt-1 block text-sm'>
+        * 1 SOL = 10 MOVE
+      </label>
     </div>
   );
 }
