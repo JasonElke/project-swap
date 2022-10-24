@@ -5,7 +5,7 @@ use anchor_spl::token::{self, TokenAccount, Transfer};
 
 use errors::*;
 
-declare_id!("CjJRKb6cSJ6zb4ZjThjVutY1ZWQL2SvpY24TQ2VvY9Wz");
+declare_id!("4BGp432btLqgMjE5Q4vtEXsj64UDMsCtnpdhkWc5zVi6");
 
 #[program]
 pub mod project_swap {

@@ -95,7 +95,7 @@ describe("project-swap", () => {
 
     console.log('loading pool swap...');
     const fetchedPoolSwap = await program.account.poolInfo.fetch(poolInfoAccount.publicKey);
-
+    console.log(fetchedPoolSwap);
     assert(fetchedPoolSwap.tokenProgramId.equals(TOKEN_PROGRAM_ID));
     assert(fetchedPoolSwap.isInitialized == true);
     assert(fetchedPoolSwap.quoteTokenAccount.equals(poolMoveTokenAccount));
@@ -105,17 +105,24 @@ describe("project-swap", () => {
   });
 
   it("Test swap SOL to MOVE!", async () => {
-    const userMoveAccountInfo = await moveToken.getOrCreateAssociatedAccountInfo(testUserWallet.publicKey);
-    const userMoveAccount = userMoveAccountInfo.address;
+    const userMoveAccountInfo = await moveToken.createAccount(testUserWallet.publicKey);
+    const userMoveAccount = userMoveAccountInfo;
 
     console.log(`user MOVE token account = ${userMoveAccount.toBase58()}`);
 
     const amountIn = new anchor.BN(1e8); // 0.1 SOL
 
     const userMoveInfoBefore = await moveToken.getAccountInfo(userMoveAccount);
+    console.log(`userMoveInfoBefore=${userMoveInfoBefore.amount.toNumber()}`);
+
     const userSolBalanceBefore = await connection.getBalance(testUserWallet.publicKey);
+    console.log(`userSolBalanceBefore=${userSolBalanceBefore}`);
+
     const poolSolBalanceBefore = await connection.getBalance(poolSolAccountInfo.publicKey);
+    console.log(`poolSolBalanceBefore=${poolSolBalanceBefore}`);
+
     const poolMoveInfoBefore = await moveToken.getAccountInfo(poolMoveTokenAccount);
+    console.log(`poolMoveInfoBefore=${poolMoveInfoBefore.amount.toNumber()}`);
 
     let txSwap = await program.methods
       .swap(amountIn)
@@ -137,9 +144,18 @@ describe("project-swap", () => {
     console.log('loading pool swap...');
 
     const userMoveInfoAfter = await moveToken.getAccountInfo(userMoveAccount);
+    console.log(`userMoveInfoAfter=${userMoveInfoAfter.amount.toNumber()}`);
+
     const userSolBalanceAfter = await connection.getBalance(testUserWallet.publicKey);
+    console.log(`userSolBalanceAfter=${userSolBalanceAfter}`);
+
     const poolSolBalanceAfter = await connection.getBalance(poolSolAccountInfo.publicKey);
+    console.log(`poolSolBalanceAfter=${poolSolBalanceAfter}`);
+
     const poolMoveInfoAfter = await moveToken.getAccountInfo(poolMoveTokenAccount);
+    console.log(`poolMoveInfoAfter=${poolMoveInfoAfter.amount.toNumber()}`);
+
+
     assert(userMoveInfoAfter.amount.toNumber() - userMoveInfoBefore.amount.toNumber() == 1e9);
     assert(poolSolBalanceAfter - poolSolBalanceBefore == 1e8);
     assert(userSolBalanceBefore - userSolBalanceAfter == 1e8);

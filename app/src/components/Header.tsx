@@ -12,7 +12,7 @@ export const AppBar: FC = props => {
       <div className="navbar">
         <div className="navbar-start">
           <div>
-            SWAP
+            TIEN NGUYEN
           </div>
         </div>
 
